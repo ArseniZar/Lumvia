@@ -7,7 +7,7 @@ namespace telegram
     /*=========================TelegramRequest=============================*/
 
     struct TelegramRequest
-    {
+    {   
         virtual bool isOk() const = 0;
         virtual ~TelegramRequest() = default;
     };

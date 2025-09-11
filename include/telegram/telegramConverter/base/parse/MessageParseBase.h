@@ -14,11 +14,10 @@ namespace telegram
     class MessageParse
     {
     public:
-        virtual int countKey() const = 0;
         virtual ~MessageParse() = default;
 
     protected:
-        static std::unique_ptr<MessageConvertible> parsePairs(const su::Text pairs[], const int pairsLength, const std::map<String, std::regex> &expectedKeys, std::map<String, String> &outMap);
+        static std::unique_ptr<MessageConvertible> parsePairs(const su::Text *pairs, const int pairsSize, const std::map<const char *, std::regex> &expectedKeys);
     };
 }
 #endif // MESSAGE_PARSE_BASE_H

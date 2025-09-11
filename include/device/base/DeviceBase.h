@@ -3,6 +3,7 @@
 #define DEVICE_BASE_H
 
 #include <Arduino.h>
+#include <StringN.h>
 #include "MacAddress.h"
 
 class DeviceBase
@@ -16,7 +17,7 @@ protected:
     const MacAddress &mac;
     const String name;
     DeviceBase() = delete;
-    DeviceBase(const MacAddress &mac, const String name) : mac(mac), name(name) {}
+    DeviceBase(const MacAddress &mac, const char *name) : mac(mac), name(name) {}
 };
 
 #endif // DEVICE_BASE_H

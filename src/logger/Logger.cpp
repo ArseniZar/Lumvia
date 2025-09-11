@@ -8,45 +8,29 @@ Logger &Logger::init(bool debugMode)
 
 Logger::Logger(bool debugMode) : debugMode(debugMode) {}
 
-void Logger::log(const String &message, LogLevel level)
+void Logger::log(LogLevel level, std::function<String256()> messageGenerator)
 {
   if (!debugMode && level == LOG_DEBUG)
-  {
     return;
-  }
-  String prefix = levelToString(level);
-  logBuffer += prefix + message + "\n";
-  Serial.println(prefix + message + "\n");
+
+  Serial.print(levelToString(level));
+  Serial.print(messageGenerator());
+  Serial.print("\n");
 }
 
-void Logger::clear()
-{
-  logBuffer = "";
-}
-
-const String &Logger::getLog() const
-{
-  return logBuffer;
-}
-
-void Logger::printToSerial() const
-{
-  Serial.print(logBuffer);
-}
-
-String Logger::levelToString(LogLevel level) const
+const __FlashStringHelper *Logger::levelToString(LogLevel level) const
 {
   switch (level)
   {
   case LOG_INFO:
-    return "[INFO] ";
+    return F("[INFO] ");
   case LOG_WARN:
-    return "[WARN] ";
+    return F("[WARN] ");
   case LOG_ERROR:
-    return "[ERROR] ";
+    return F("[ERROR] ");
   case LOG_DEBUG:
-    return "[DEBUG] ";
+    return F("[DEBUG] ");
   default:
-    return "[UNKNOWN] ";
+    return F("[UNKNOWN] ");
   }
 }

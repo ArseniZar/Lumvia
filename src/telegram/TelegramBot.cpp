@@ -1,8 +1,8 @@
 #include "TelegramBot.h"
 
-TelegramBot::TelegramBot(Logger &logger, const String &token, const MacAddress &mac) : logger(logger), bot(FastBot2(token)), mac(mac), limitMessage(10), periodUpdate(1000) {}
+TelegramBot::TelegramBot(Logger &logger, const char *token, const MacAddress &mac) : logger(logger), bot(FastBot2(token)), mac(mac), limitMessage(10), periodUpdate(1000) {}
 
-TelegramBot &TelegramBot::init(Logger &logger, const String &token, const MacAddress &mac)
+TelegramBot &TelegramBot::init(Logger &logger, const char *token, const MacAddress &mac)
 {
     static TelegramBot instance(logger, token, mac);
     return instance;
@@ -17,17 +17,23 @@ void TelegramBot::begin()
     bot.onUpdate([this](fb::Update &u)
                  { this->handleUpdateMsg(u); });
 }
-
 void TelegramBot::handleUpdateMsg(fb::Update &u)
 {
-    using namespace telegram;
-    auto parseBasePtr = parseTelegramRequest<ModelBaseRequest>(u.message().text());
+    auto parseBasePtr = telegram::parseTelegramRequest<telegram::ModelBaseRequest>(u.message().text().c_str());
     if (parseBasePtr->isOk())
     {
-        auto *successParseBasePtr = static_cast<TelegramSuccessRequest<ModelBaseRequest> *>(parseBasePtr.get());
-        String &parseCommand = successParseBasePtr->data.command;
-        String &parseId = successParseBasePtr->data.id;
-        logger.log("[TelegramBot] Successfully parsed ModelBaseRequest: command=" + parseCommand + ", id=" + parseId, LOG_DEBUG);
+        auto *successParseBasePtr = static_cast<telegram::TelegramSuccessRequest<telegram::ModelBaseRequest> *>(parseBasePtr.get());
+        String parseCommand = std::move(successParseBasePtr->data.command);
+        StringN<18> parseId = successParseBasePtr->data.id;
+        Serial.println(parseId);
+        logger.log(LOG_DEBUG, [&]() -> String256
+                   { String256 buf;
+                     buf.add(F("[TelegramBot::handleUpdateMsg] Successfully parsed ModelBaseRequest: command="));
+                     buf.add(parseCommand.c_str());
+                     buf.add(F(", id="));
+                     buf.add(parseId);
+                    return buf; });
+
         if (mac.equals(parseId) || mac.isBroadcast(parseId))
         {
             auto it = handlers.find(parseCommand);
@@ -37,18 +43,38 @@ void TelegramBot::handleUpdateMsg(fb::Update &u)
             }
             else
             {
-                logger.log("[TelegramBot] Command not implemented: " + parseCommand, LOG_DEBUG);
+                logger.log(LOG_DEBUG, [&]() -> String256
+                           { String256 buf;
+                     buf.add(F("[TelegramBot::handleUpdateMsg] Command not implemented: "));
+                     buf.add(parseCommand.c_str());
+                    return buf; });
             }
         }
         else
         {
-            logger.log("[TelegramBot] Received command '" + parseCommand + "' not intended for this device (MAC: " + mac.getMac() + ", target ID: " + parseId + ")", LOG_DEBUG);
+            logger.log(LOG_DEBUG, [&]() -> String256
+                       { String256 buf;
+                     buf.add(F("[TelegramBot::handleUpdateMsg] Received command '"));
+                     buf.add(parseCommand.c_str());
+                     buf.add(F("' not intended for this device (MAC: "));
+                     buf.add(mac.getMac());
+                     buf.add(F(", target ID: "));
+                     buf.add(parseId);
+                     buf.add(')');
+                    return buf; });
         }
     }
     else
     {
-        auto *errorParseBasePtr = static_cast<TelegramErrorRequest *>(parseBasePtr.get());
-        logger.log("[TelegramBot] Failed to parse ModelBaseRequest: " + String(u.message().text()) + " nError: " + errorParseBasePtr->message, LOG_WARN);
+        auto *errorParseBasePtr = static_cast<telegram::TelegramErrorRequest *>(parseBasePtr.get());
+
+        logger.log(LOG_WARN, [&]() -> String256
+                   { String256 buf;
+                     buf.add(F("[TelegramBot::handleUpdateMsg] Failed to parse ModelBaseRequest: "));
+                     buf.add(u.message().text().c_str());
+                     buf.add(F(" nError: "));
+                     buf.add(errorParseBasePtr->message);
+                    return buf; });
     }
 }
 

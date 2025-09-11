@@ -9,17 +9,13 @@ class Eeprom
 {
 public:
     String readString(int startAddr = 0);
-    void writeString(const String &str, int startAddr = 0);
-    static Eeprom &init(int size);
+    void writeString(const char *, int startAddr = 0);
+    static Eeprom &init(const int size);
 
 private:
-    int size;
-    Eeprom(int size);
-    Eeprom(bool debugMode = true);
-    Eeprom(const Eeprom &) = default;
-    Eeprom(Eeprom &&) = default;
-    Eeprom &operator=(const Eeprom &) = default;
-    Eeprom &operator=(Eeprom &&) = default;
+    const int size;
+    Eeprom() = delete;
+    Eeprom(const int size);
 };
 
 #endif // EEPROMHELPER_H

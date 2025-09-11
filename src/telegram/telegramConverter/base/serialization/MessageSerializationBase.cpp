@@ -1,17 +1,31 @@
 #include "MessageSerializationBase.h"
 namespace telegram
 {
-    String MessageSerialization::serializationPairs(const std::vector<std::pair<String, String>> &pairs)
+    String MessageSerialization::serializationPairs(std::tuple<const char *, String> *pairs, const int pairsSize)
     {
-        String result;
-        for (size_t i = 0; i < pairs.size(); ++i)
+        int totalLen = 0;
+        for (int i = 0; i < pairsSize; ++i)
         {
-            result += pairs[i].first + '=' + pairs[i].second;
-            if (i < pairs.size() - 1)
-            {
-                result += ';';
-            }
+
+            totalLen += strlen(std::get<0>(pairs[i]));
+            totalLen += std::get<1>(pairs[i]).length();
+            totalLen += 1;
+            if (i < pairsSize - 1)
+                totalLen += 1;
         }
+
+        String result;
+        result.reserve(totalLen + 1);
+
+        for (int i = 0; i < pairsSize; ++i)
+        {
+            result += std::get<0>(pairs[i]);
+            result += '=';
+            result += std::move(std::get<1>(pairs[i]));
+            if (i < pairsSize - 1)
+                result += ';';
+        }
+
         return result;
     }
 }

@@ -3,6 +3,7 @@
 #define TELEGRAM_REQUEST_H
 
 #include <Arduino.h>
+#include <StringN.h>
 #include "MessageParseBase.h"
 #include "TelegramTypesBase.h"
 
@@ -18,6 +19,7 @@ namespace telegram
         T data;
         TelegramSuccessRequest() = delete;
         TelegramSuccessRequest(const T &data) : data(data) {}
+        TelegramSuccessRequest(T &&data) : data(std::move(data)) {}
         bool isOk() const override { return true; }
     };
 
@@ -25,9 +27,9 @@ namespace telegram
 
     struct TelegramErrorRequest final : public TelegramRequest
     {
-        String message;
+        String256 message;
         TelegramErrorRequest() = delete;
-        TelegramErrorRequest(const String &msg) : message(msg) {}
+        TelegramErrorRequest(const char *msg) : message(msg) {}
         bool isOk() const override { return false; }
     };
 

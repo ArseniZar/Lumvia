@@ -3,6 +3,7 @@
 #define LOGGER_H
 
 #include <Arduino.h>
+#include <StringN.h>
 
 enum LogLevel
 {
@@ -15,23 +16,15 @@ enum LogLevel
 class Logger
 {
 public:
-  void clear();
-  const String &getLog() const;
-  void printToSerial() const;
   static Logger &init(bool debugMode);
-  void log(const String &message, LogLevel level = LOG_INFO);
+  void log(LogLevel level, std::function<String256()> messageGenerator);
 
 private:
   bool debugMode;
-  String logBuffer;
 
-  Logger(bool debugMode = true);
-  Logger(const Logger &) = default;
-  Logger(Logger &&) = default;
-  Logger &operator=(const Logger &) = default;
-  Logger &operator=(Logger &&) = default;
-
-  String levelToString(LogLevel level) const;
+  Logger(bool debugMode);
+  Logger() = delete;
+  const __FlashStringHelper *levelToString(LogLevel level) const;
 };
 
 #endif

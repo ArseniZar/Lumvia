@@ -4,15 +4,11 @@ namespace telegram
 {
     String serializationTelegramResponce(const TelegramErrorResponse &response)
     {
-        {
-            String result;
-            result.reserve(response.text.length()+response.message.length()+11);
-            result += '/';
-            result += response.text;
-            result += ';';
-            result += "message=" + response.message;
-            result += '/';
-            return result;
-        }
+        String result;
+        result.reserve(response.message.length() + 2);
+        result += '/';
+        result += response.message.c_str();
+        result += '/';
+        return result;
     }
 }

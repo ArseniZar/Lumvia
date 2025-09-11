@@ -6,12 +6,12 @@ namespace telegram
     template <typename T>
     String serializationTelegramResponce(const TelegramSuccessResponse<T> &responce)
     {
+        String message = responce.data.toMessage();
         String result;
+        result.reserve(message.length() + 2);
         result += '/';
-        result += responce.data.toMessage();
+        result += std::move(message);
         result += '/';
         return result;
     }
-
-    
 }

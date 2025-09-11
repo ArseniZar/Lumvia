@@ -26,11 +26,11 @@ template <typename T, typename E>
 class DeviceLed final : public DeviceBase
 {
 public:
-    DeviceLed(Logger &logger, const MacAddress &mac, const String &name, uint16_t countLed, uint8_t pin);
+    DeviceLed(Logger &logger, const MacAddress &mac, const char *name, uint16_t countLed, uint8_t pin);
     void begin();
     void setPower(bool newStatus);
     void setBrightness(int newBrightness);
-    void setColor(const String &color);
+    void setColor(const char *color);
 
 private:
     Logger &logger;
@@ -41,7 +41,7 @@ private:
     RgbColor color;
     bool status;
 
-    RgbColor stringToRgbColor(const String &colorStr);
+    RgbColor stringToRgbColor(const char *colorStr);
     RgbColor brightnessColor();
 };
 

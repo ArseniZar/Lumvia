@@ -1,27 +1,31 @@
 #include "Eeprom.h"
 
-Eeprom &Eeprom::init(int size)
+Eeprom &Eeprom::init(const int size)
 {
     static Eeprom instance(size);
     return instance;
 }
 
-Eeprom::Eeprom(int size) : size(size) { EEPROM.begin(size); }
+Eeprom::Eeprom(const int size) : size(size) { EEPROM.begin(size); }
 
-
-
-void Eeprom::writeString(const String &str, int startAddr)
+void Eeprom::writeString(const char *str, int startAddr)
 {
-    int len = str.length();
-    if (len > size - startAddr - 1)
-    {
-        len = size - startAddr - 1;
-    }
+    if (!str)
+        return;
 
-    for (int i = 0; i < len; i++)
+    int len = 0;
+    while (str[len] != '\0')
+        ++len;
+
+    int maxLen = size - startAddr - 1;
+    if (len > maxLen)
+        len = maxLen;
+
+    for (int i = 0; i < len; ++i)
     {
         EEPROM.write(startAddr + i, str[i]);
     }
+
     EEPROM.write(startAddr + len, 0);
     EEPROM.commit();
 }
@@ -29,17 +33,16 @@ void Eeprom::writeString(const String &str, int startAddr)
 String Eeprom::readString(int startAddr)
 {
     int maxLen = size - startAddr;
-    char *buf = new char[maxLen + 1];
+    char buf[maxLen + 1];
 
-    for (int i = 0; i < maxLen; i++)
+    int i = 0;
+    for (; i < maxLen; ++i)
     {
         buf[i] = EEPROM.read(startAddr + i);
         if (buf[i] == 0)
-        {
             break;
-        }
     }
-    String result(buf);
-    delete[] buf;
-    return result;
+
+    buf[i] = 0;
+    return String(buf);
 }

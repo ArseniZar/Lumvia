@@ -8,8 +8,8 @@ App::App() : cachedSsid(""), cachedPass(""),
              bot(TelegramBot::init(logger, BOT_TOKEN, mac)),
              device(DeviceLed<NeoBrgFeature, NeoEsp8266Dma800KbpsMethod>(logger, mac, DEVICE_NAME, LED_COUNT, DEVICE_PIN))
 {
-    cachedSsid = eeprom.readString(ADDR_WIFI_SSID);
-    cachedPass = eeprom.readString(ADDR_WIFI_PASS);
+    cachedSsid = eeprom.readString(ADDR_WIFI_SSID).c_str();
+    cachedPass = eeprom.readString(ADDR_WIFI_PASS).c_str();
 }
 
 App &App::init()
@@ -20,34 +20,23 @@ App &App::init()
 
 void App::begin()
 {
-    Serial.print("FreeHeap before wifi: ");
-    Serial.println(ESP.getFreeHeap());
 
 #if ENABLE_DEVICE_MODULE
-    Serial.print("FreeHeap before NeoPixelBus: ");
-    Serial.println(ESP.getFreeHeap());
     device.begin();
-    Serial.print("FreeHeap after NeoPixelBus: ");
-    Serial.println(ESP.getFreeHeap());
 #endif
 
 #if ENABLE_WIFI_MODULE
     wifi.setMdnsName(MDNS_NAME);
     wifi.setAPConfig(AP_SSID, AP_PASS);
-    wifi.setWiFiConfig(cachedSsid, "");
+    wifi.setWiFiConfig(cachedSsid, cachedPass);
     wifi.begin();
 #endif
-
-    Serial.print("FreeHeap after wifi: ");
-    Serial.println(ESP.getFreeHeap());
 
 #if ENABLE_WIFI_MODULE && ENABLE_TELEGRAM_BOT_MODULE
     if (wifi.status() == ConnState::WL_CONNECTED)
     {
         commitWiFiIfChanged();
 #if ENABLE_TELEGRAM_BOT_MODULE
-        Serial.print("FreeHeap before bot: ");
-        Serial.println(ESP.getFreeHeap());
 
         bot.setLimitMessage(BOT_LIMIT);
         bot.setPeriodUpdate(BOT_PERIOD);
@@ -55,9 +44,6 @@ void App::begin()
 #if ENABLE_DEVICE_MODULE && ENABLE_TELEGRAM_BOT_MODULE
         bindDeviceToTelegramCommands();
 #endif
-        Serial.print("FreeHeap after bot: ");
-        Serial.println(ESP.getFreeHeap());
-
 #endif
     }
 
@@ -89,8 +75,8 @@ void App::update()
 
 void App::commitWiFiIfChanged()
 {
-    String currentSsid = wifi.getSsid();
-    String currentPass = wifi.getPass();
+    const char *currentSsid = wifi.getSsid();
+    const char *currentPass = wifi.getPass();
 
     if (currentSsid != cachedSsid || currentPass != cachedPass)
     {
@@ -107,14 +93,8 @@ void App::bindDeviceToTelegramCommands()
     using namespace telegram;
 
     bot.registerCommand<ScanLedDeviceRequest, ScanLedDeviceResponse>(BOT_CMD_SCAN, [this](ScanLedDeviceRequest &request) -> ScanLedDeviceResponse
-                                                                     { return ScanLedDeviceResponse(device.getName(), ModelBaseResponse(request.command, device.getMacAddress().getMac())); });
+                                                                     { return ScanLedDeviceResponse(device.getName(), std::move(ModelBaseResponse(request.command, device.getMacAddress().getMac()))); });
     bot.registerCommand<UpdateLedDeviceRequest, void>(BOT_CMD_UPDATE, [this](UpdateLedDeviceRequest &request) -> void
-
-                                                      {   
-        Serial.print("FreeHeap before NeoPixelBus: "); 
-        Serial.println(ESP.getFreeHeap());
-        device.setColor(request.color);
-        device.setPower(request.status);
-        Serial.print("FreeHeap after NeoPixelBus: ");
-        Serial.println(ESP.getFreeHeap()); });
+        {device.setColor(request.color);
+        device.setPower(request.status); });
 }

@@ -12,7 +12,7 @@
 namespace telegram
 {
     template <typename T>
-    std::unique_ptr<TelegramRequest> parseTelegramRequest(const su::Text &text);
+    std::unique_ptr<TelegramRequest> parseTelegramRequest(const char* message);
 }
 
 #include "TelegramParse.tpp"

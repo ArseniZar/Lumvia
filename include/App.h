@@ -34,11 +34,10 @@ public:
     static App &init();
     void begin();
     void update();
-    ~App() = default;
 
 private:
-    String cachedSsid;
-    String cachedPass;
+    String32 cachedSsid;
+    String32 cachedPass;
 
     Logger &logger;
     Eeprom &eeprom;

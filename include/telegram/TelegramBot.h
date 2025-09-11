@@ -23,7 +23,7 @@ public:
 
     template <typename T, typename E = void>
     void registerCommand(const String &command, std::function<E(T &)> handler);
-    static TelegramBot &init(Logger &logger, const String &token, const MacAddress &mac);
+    static TelegramBot &init(Logger &logger, const char *token, const MacAddress &mac);
 
 private:
     Logger &logger;
@@ -34,10 +34,10 @@ private:
     int periodUpdate;
 
     std::map<String, std::function<void(fb::Update &)>> handlers;
-    
+
     TelegramBot() = delete;
+    TelegramBot(Logger &logger, const char *token, const MacAddress &mac);
     void handleUpdateMsg(fb::Update &u);
-    TelegramBot(Logger &logger, const String &token, const MacAddress &mac);
 };
 
 #include "TelegramBot.tpp"

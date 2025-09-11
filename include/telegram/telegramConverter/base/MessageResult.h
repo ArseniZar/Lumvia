@@ -3,8 +3,9 @@
 #define MESSAGE_RESULT_H
 
 #include <Arduino.h>
+#include <StringN.h>
 
-namespace telegram 
+namespace telegram
 {
     /*=====================MessageConvertible=========================*/
 
@@ -20,8 +21,9 @@ namespace telegram
     struct MessageParseSuccess final : public MessageConvertible
     {
         T result;
-
+        MessageParseSuccess() = delete;
         MessageParseSuccess(const T &result) : result(result) {}
+        MessageParseSuccess(T &&result) : result(std::move(result)) {}
         bool isOk() const override { return true; }
     };
 
@@ -29,9 +31,9 @@ namespace telegram
 
     struct MessageError final : public MessageConvertible
     {
-        String message;
-
-        MessageError(const String &message) : message(message) {}
+        String128 message;
+        MessageError() = delete;
+        MessageError(const char *msg) : message(msg) {}
         bool isOk() const override { return false; }
     };
 

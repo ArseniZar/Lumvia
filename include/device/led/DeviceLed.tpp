@@ -2,7 +2,7 @@
 #include "DeviceLed.h"
 // DeviceLed.tpp
 template <typename T, typename E>
-DeviceLed<T, E>::DeviceLed(Logger &logger, const MacAddress &mac, const String &name, uint16_t countLed, uint8_t pin) : DeviceBase(mac, name),
+DeviceLed<T, E>::DeviceLed(Logger &logger, const MacAddress &mac, const char *name, uint16_t countLed, uint8_t pin) : DeviceBase(mac, name),
                                                                                                                        logger(logger),
                                                                                                                        device(countLed, pin),
                                                                                                                        countLed(countLed),
@@ -46,10 +46,10 @@ void DeviceLed<T, E>::setPower(bool newStatus)
 }
 
 template <typename T, typename E>
-void DeviceLed<T, E>::setColor(const String &color)
+void DeviceLed<T, E>::setColor(const char *color)
 {
     RgbColor hexColor = stringToRgbColor(color);
-    this->color = hexColor;
+    this->color = std::move(hexColor);
     
     if (status)
     {
@@ -59,7 +59,7 @@ void DeviceLed<T, E>::setColor(const String &color)
 }
 
 template <typename T, typename E>
-RgbColor DeviceLed<T, E>::stringToRgbColor(const String &colorStr)
+RgbColor DeviceLed<T, E>::stringToRgbColor(const char* colorStr)
 {
     String hex = colorStr;
     if (hex.startsWith("#"))

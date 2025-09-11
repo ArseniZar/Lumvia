@@ -4,108 +4,163 @@ namespace espweb
 {
     WebServer::WebServer(Logger &logger, int port) : logger(logger), server(port)
     {
-        server.keepAlive(true);
-        MDNS.addService("http", "tcp", port);
+        MDNS.addService(F("http"), F("tcp"), port);
     }
-    
-    bool WebServer::begin(std::function<std::vector<Network>()> getNetwork,
-                          std::function<bool(const String &, const String &)> attemptConnection)
+
+    /*========================================begin=============================================================*/
+
+    void WebServer::begin(std::function<std::vector<api::Network>()> scanAvailableWiFiNetworks,
+                          std::function<bool(const char *, const char *)> attemptConnection)
     {
-        server.on("/", HTTP_GET, [this]()
+        server.keepAlive(true);
+
+        server.on(F("/"), HTTP_GET, [this]()
                   { this->handleRoot(); });
 
-        server.on("/scan", HTTP_GET, [this, getNetwork]()
-                  { this->handleScan(getNetwork); });
+        server.on(F("/"), HTTP_OPTIONS, [this]()
+                  {    
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(200); });
 
-        server.on("/network", HTTP_POST, [this, attemptConnection]()
+        server.on(F("/scan"), HTTP_GET, [this, scanAvailableWiFiNetworks]()
+                  { this->handleScan(scanAvailableWiFiNetworks); });
+
+        server.on(F("/scan"), HTTP_OPTIONS, [this]()
+                  {
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(200); });
+
+        server.on(F("/network"), HTTP_POST, [this, attemptConnection]()
                   { this->handleNetwork(attemptConnection); });
 
-        server.on("/end", HTTP_GET, [this]()
+        server.on(F("/network"), HTTP_OPTIONS, [this]()
+                  {
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("POST, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(200); });
+
+        server.on(F("/end"), HTTP_GET, [this]()
                   { this->handleEnd(); });
+
+        server.on(F("/end"), HTTP_OPTIONS, [this]()
+                  {
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(200); });
 
         server.onNotFound([this]()
                           { this->handleNotFound(); });
 
         server.begin();
         serverRunning = true;
-        logger.log("(WebServer::begin) Server started and running.", LOG_INFO);
-
-        return true;
+        logger.log(LOG_INFO, [&]() -> String128
+                   { String128 buf; buf.add(F("(WebServer::begin) Server started and running.")); return buf; });
     }
+
+    /*========================================handleRoot=============================================================*/
 
     void WebServer::handleRoot()
     {
-        logger.log("(WebServer::handleRoot) Handling root page request.", LOG_DEBUG);
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleRoot) Handling root page request.")); return buf; });
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
         server.send_P(200, "text/html", index);
     }
-    void WebServer::handleScan(std::function<std::vector<Network>()> getNetwork)
+
+    /*========================================handleScan=============================================================*/
+
+    void WebServer::handleScan(std::function<std::vector<api::Network>()> scanAvailableWiFiNetworks)
     {
-        logger.log("(WebServer::handleScan) Processing scan networks request.", LOG_DEBUG);
-        api::ApiSuccessResponseList<Network> response;
-        response.result = getNetwork();
-        logger.log("(WebServer::handleScan) Networks scanned: " + String(response.result.size()), LOG_DEBUG);
-        server.send(200, "application/json", api::serializeApiResponse(response));
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleScan) Processing scan networks request.")); return buf; });
+        const auto responce = api::ApiSuccessResponse<api::ScanNetworksResponce>(200, std::move(api::ScanNetworksResponce(std::move(scanAvailableWiFiNetworks()), std::move(api::ModelBaseResponse()))));
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+        server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
     }
 
-    void WebServer::handleNetwork(std::function<bool(const String &, const String &)> attemptConnection)
+    /*========================================handleNetwork==========================================================*/
+
+    void WebServer::handleNetwork(std::function<bool(const char *, const char *)> attemptConnection)
     {
-        const String &body = server.arg("plain");
-        logger.log("(WebServer::handleNetwork) Received network connect request.", LOG_DEBUG);
-        std::unique_ptr<api::ApiResponse> response_ptr;
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleNetwork) Received network connect request.")); return buf; });
+
+        const String &body = server.arg(F("plain"));
 
         if (body.isEmpty())
         {
-            logger.log("(WebServer::handleNetwork) Empty request body.", LOG_WARN);
-            response_ptr = std::make_unique<api::ApiErrorResponse>(400, "Empty request body");
+            logger.log(LOG_WARN, [&]() -> String128
+                       {String128 buf; buf.add(F("(WebServer::handleNetwork) Empty request body.")); return buf; });
+            const auto responce = api::ApiErrorResponse(400, String32(F("Empty request body")));
+            server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+            server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
+            return;
+        }
+
+        auto apiRequstPtr = api::parseApiRequest<api::ConnectNetworkRequest>(body.c_str());
+        if (apiRequstPtr->isOk())
+        {
+            auto *successApiRequstPtr = static_cast<api::ApiSuccessRequest<api::ConnectNetworkRequest> *>(apiRequstPtr.get());
+            const bool status = attemptConnection(successApiRequstPtr->data.network.ssid, successApiRequstPtr->data.network.password);
+            const auto responce = api::ApiSuccessResponse<api::ConnectNetworkResponce>(200, std::move(api::ConnectNetworkResponce(status, std::move(successApiRequstPtr->data))));
+            server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+            server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
         }
         else
         {
-            auto parse_ptr = api::parseApiRequest<Network>(body);
-            if (parse_ptr->isOk())
-            {
-                auto *success_parse_ptr = static_cast<api::ApiSuccessRequestSingle<Network> *>(parse_ptr.get());
-                logger.log("(WebServer::handleNetwork) Successfully parsed", LOG_DEBUG);
-                bool connected = attemptConnection(success_parse_ptr->data.ssid, success_parse_ptr->data.password);
-                api::ApiSuccessResponseSingle<Network> response;
-                response.ok = connected;
-                response.result = success_parse_ptr->data;
-                response_ptr = std::make_unique<api::ApiSuccessResponseSingle<Network>>(response);
-            }
-            else
-            {
-                auto *error_ptr = static_cast<api::ApiErrorRequest *>(parse_ptr.get());
-                logger.log("(WebServer::handleNetwork) Failed to parse request: " + error_ptr->message, LOG_WARN);
-                response_ptr = std::make_unique<api::ApiErrorResponse>(400, error_ptr->message);
-            }
+            auto *errorApiRequstPtr = static_cast<api::ApiErrorRequest *>(apiRequstPtr.get());
+            const auto responce = api::ApiErrorResponse(400, errorApiRequstPtr->message);
+            server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+            server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
         }
-
-        server.send(response_ptr->getCode(), "application/json", api::serializeApiResponse<Network>(*response_ptr));
     }
+
+    /*========================================handleEnd============================================================*/
 
     void WebServer::handleEnd()
     {
-        logger.log("(WebServer::handleEnd) Request accepted, stopping server.", LOG_INFO);
-        server.send(200, "text/plain", "Request accepted");
+        logger.log(LOG_INFO, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleEnd) Request accepted, stopping server.")); return buf; });
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+        server.send(200);
         stop();
     }
 
+    /*========================================handleNotFound========================================================*/
+
     void WebServer::handleNotFound()
     {
-        logger.log("(WebServer::handleNotFound) Resource not found.", LOG_WARN);
-        api::ApiErrorResponse error(404, "Resource not found");
-        server.send(error.getCode(), "application/json", api::serializeApiResponse(error));
+        logger.log(LOG_WARN, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleNotFound) Resource not found.")); return buf; });
+        const auto responce = api::ApiErrorResponse(400, String32(F("Resource not found")));
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+        server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
     }
+
+    /*========================================handleClient==========================================================*/
 
     void WebServer::handleClient()
     {
         server.handleClient();
     }
+
+    /*==============================================stop=============================================================*/
+
     void WebServer::stop()
     {
         server.stop();
-        logger.log("(WebServer::stop) Stop server.", LOG_INFO);
         serverRunning = false;
+        logger.log(LOG_INFO, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::stop) Stop server.")); return buf; });
     }
+
+    /*========================================isRunning=============================================================*/
 
     bool WebServer::isRunning() const
     {

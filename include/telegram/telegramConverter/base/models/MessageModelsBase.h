@@ -14,12 +14,13 @@ namespace telegram
     {
     public:
         String command;
-        String id;
+        StringN<18> id; 
         ModelBaseRequest() = delete;
-        int countKey() const override;
-        ModelBaseRequest(const ModelBaseRequest &other);
-        ModelBaseRequest(const String &command, const String &id);
-        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text pairs[], const int pairsLength);
+        ModelBaseRequest(ModelBaseRequest &&base);
+        ModelBaseRequest(const ModelBaseRequest &base);
+        ModelBaseRequest(const String &command, const char *id);
+        ModelBaseRequest(String &&command, const char *id);
+        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text *pairs, const int pairsSize);
     };
 
     /*==========================================================ModelResponse==============================================*/
@@ -28,12 +29,15 @@ namespace telegram
     {
     public:
         String command;
-        String id;
+        StringN<18> id;
         ModelBaseResponse() = delete;
+        ModelBaseResponse(ModelBaseResponse &&base);
+        ModelBaseResponse(ModelBaseRequest &&base);
+        ModelBaseResponse(const ModelBaseResponse &base);
+        ModelBaseResponse(const ModelBaseRequest &base);
+        ModelBaseResponse(const String &command, const char *id);
+        ModelBaseResponse(String &&command, const char *id);
         String toMessage() const override;
-        ModelBaseResponse(const ModelBaseResponse &other);
-        ModelBaseResponse(const ModelBaseRequest &other);
-        ModelBaseResponse(const String &command, const String &id);
     };
 }
 

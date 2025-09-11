@@ -14,9 +14,9 @@ namespace telegram
     public:
         virtual ~MessageSerialization() = default;
         virtual String toMessage() const = 0;
-        
+
     protected:
-        static String serializationPairs(const std::vector<std::pair<String, String>> &pairs);
+        static String serializationPairs(std::tuple<const char *, String> *pairs, const int pairsSize);
     };
 }
 

@@ -12,12 +12,12 @@ namespace telegram
     class UpdateLedDeviceRequest final : public ModelBaseRequest
     {
     public:
-        String color;
+        StringN<8> color;
         bool status;
         UpdateLedDeviceRequest() = delete;
-        int countKey() const override;
-        UpdateLedDeviceRequest(const String &color, const bool &status, const ModelBaseRequest &obj);
-        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text pairs[], const int pairsLength);
+        UpdateLedDeviceRequest(const char *color, const bool status, const ModelBaseRequest &base);
+        UpdateLedDeviceRequest(const char *color, const bool status, ModelBaseRequest &&base);
+        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text *pairs, const int pairsSize);
     };
 
     /*===================================== ScanLedDevice =========================================================*/
@@ -26,9 +26,9 @@ namespace telegram
     {
     public:
         ScanLedDeviceRequest() = delete;
-        int countKey() const override;
-        ScanLedDeviceRequest(const ModelBaseRequest &obj);
-        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text pairs[], const int pairsLength);
+        ScanLedDeviceRequest(ModelBaseRequest &&base);
+        ScanLedDeviceRequest(const ModelBaseRequest &base);
+        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text *pairs, const int pairsSize);
     };
 
     class ScanLedDeviceResponse final : public ModelBaseResponse
@@ -36,9 +36,12 @@ namespace telegram
     public:
         String name;
         ScanLedDeviceResponse() = delete;
+        ScanLedDeviceResponse(const String &name, const ModelBaseResponse &base);
+        ScanLedDeviceResponse(String &&name,  ModelBaseResponse &&base);
         String toMessage() const override;
-        ScanLedDeviceResponse(const String &name, const ModelBaseResponse &obj);
     };
+
+    /*===================================== ************ =========================================================*/
 }
 
 #endif // LED_DEVICE_MODELS_H
