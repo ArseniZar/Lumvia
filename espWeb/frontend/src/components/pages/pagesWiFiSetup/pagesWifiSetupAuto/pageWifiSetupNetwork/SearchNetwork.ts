@@ -1,4 +1,4 @@
-import { getNetworks } from "../../../../../basic/api/apiService";
+import { ScanNetworks } from "../../../../../basic/api/apiService";
 import { html } from "../../../../../html";
 import { Network } from "../../../../../basic/classes/Network";
 import { useEffect, useState } from "preact/hooks";
@@ -31,7 +31,7 @@ export function SearchNetwork(props: { selectNetworkEmit: Callback }) {
   }
 
   async function searchNetworks() {
-    const result: ResultData<Network[]> = await getNetworks();
+    const result: ResultData<Network[]> = await ScanNetworks();
     if (result.status) {
       setNetworks(
         result.value!.map(

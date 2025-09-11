@@ -5,7 +5,7 @@ export class Network {
   ssid: string;
   password: string;
   rssi: number;
-  encryptionType: EncryptionType;
+  encryptionType: number;
   channel: number;
   bssid: string;
   hidden: boolean;
@@ -14,7 +14,7 @@ export class Network {
     ssid: string;
     password?: string;
     rssi?: number;
-    encryptionType?: EncryptionType;
+    encryptionType?: number;
     channel?: number;
     bssid?: string;
     hidden?: boolean;

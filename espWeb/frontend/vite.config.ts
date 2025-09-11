@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
     define: {
     __API_URL__: JSON.stringify(
       mode === 'development'
-        ? 'http://localhost:8080'
+        ? 'http://192.168.4.1:80'
         : ''
     )
   }

@@ -1,13 +1,9 @@
-import type { Network } from "../classes/Network";
-import {
-  HttpError,
-  InvalidJsonError,
-  NetworkError,
-  ApiReturnedError,
-} from "./errors";
-import type { ApiError, ApiSuccess } from "./types";
 
-export async function fetchGetNetworks(): Promise<Network[]> {
+import {HttpError,InvalidJsonError,NetworkError,ApiReturnedError,} from "./errors";
+import type { ApiError, ApiSuccess } from "./types";
+import type { ConnectNetworkRequest, ConnectNetworkResponce, ScanNetworksResponce } from "./apiModels";
+
+export async function fetchScanNetworks(): Promise<ScanNetworksResponce> {
   const response: Response = await fetch(`${__API_URL__}/scan`).catch(() => {
     throw new NetworkError("Network error occurred while fetching updates");
   });
@@ -19,11 +15,9 @@ export async function fetchGetNetworks(): Promise<Network[]> {
     throw new HttpError(response.status, body.message);
   }
 
-  const body: ApiSuccess<Network[]> | ApiError = await response
-    .json()
-    .catch(() => {
-      throw new InvalidJsonError();
-    });
+  const body: ApiSuccess<ScanNetworksResponce> | ApiError = await response.json().catch(() => {
+    throw new InvalidJsonError();
+  });
 
   if (!body.ok) {
     const apiError: ApiError = body as ApiError;
@@ -33,14 +27,13 @@ export async function fetchGetNetworks(): Promise<Network[]> {
   return body.result;
 }
 
-export async function fetchSendNetwork(network: Network): Promise<Network> {
+export async function fetchConnectNetwork(request: ConnectNetworkRequest): Promise<ConnectNetworkResponce> {
   const response: Response = await fetch(`${__API_URL__}/network`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      data: network,
+      data: request.network,
     }),
-    
   }).catch(() => {
     throw new NetworkError("Network error occurred while fetching updates");
   });
@@ -51,7 +44,7 @@ export async function fetchSendNetwork(network: Network): Promise<Network> {
     throw new HttpError(response.status, body.message);
   }
 
-  const body: ApiSuccess<Network> | ApiError = await response
+  const body: ApiSuccess<ConnectNetworkResponce> | ApiError = await response
     .json()
     .catch(() => {
       throw new InvalidJsonError();
@@ -65,7 +58,7 @@ export async function fetchSendNetwork(network: Network): Promise<Network> {
   return body.result;
 }
 
-export async function fetchSendEnd(): Promise<unknown> {
+export async function fetchEnd(): Promise<unknown> {
   const response: Response = await fetch(`${__API_URL__}/end`).catch(() => {
     throw new NetworkError("Network error occurred while fetching updates");
   });

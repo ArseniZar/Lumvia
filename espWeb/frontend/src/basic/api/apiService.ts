@@ -1,33 +1,32 @@
 import type { Network } from "../classes/Network";
-import { fetchGetNetworks, fetchSendEnd, fetchSendNetwork } from "./api";
+import { fetchScanNetworks, fetchEnd, fetchConnectNetwork } from "./api";
 import { HttpError, InvalidJsonError, NetworkError } from "./errors";
 import type { ResultData } from "./types";
+import type {ScanNetworksResponce,ConnectNetworkResponce} from "./apiModels";
 
-
-
-export async function getNetworks(): Promise<ResultData<Network[]>> {
+export async function ScanNetworks(): Promise<ResultData<Network[]>> {
   try {
-    const networksResponse: Network[] = await fetchGetNetworks();
-    return { status: true, value: networksResponse };
+    const networksResponse: ScanNetworksResponce = await fetchScanNetworks();
+
+    return { status: true, value: networksResponse.networks };
   } catch (error: any) {
     return handleApiError(error);
   }
 }
 
-
-export async function sendNetwork(network: Network): Promise<ResultData<Network>> {
+export async function ConnectNetwork(network: Network): Promise<ResultData<boolean>> {
   try {
-    const networkResponse = await fetchSendNetwork(network);
-    return { status: true, value: networkResponse};
+    const networkResponse: ConnectNetworkResponce = await fetchConnectNetwork({ network });
+    return { status: true, value: networkResponse.status.status };
   } catch (error: any) {
     return handleApiError(error);
   }
 }
 
-export async function sendEnd(): Promise<ResultData<unknown>> {
+export async function End(): Promise<ResultData<unknown>> {
   try {
-    await fetchSendEnd();
-    return { status: true};
+    await fetchEnd();
+    return { status: true };
   } catch (error: any) {
     return handleApiError(error);
   }

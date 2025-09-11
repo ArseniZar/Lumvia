@@ -3,7 +3,7 @@ import { Network } from "../../../../../basic/classes/Network";
 import { device, router } from "../../../../../basic/img/img";
 import { Status } from "../../../../../basic/types/Step";
 import { html } from "../../../../../html";
-import { sendEnd, sendNetwork } from "../../../../../basic/api/apiService";
+import { End, ConnectNetwork } from "../../../../../basic/api/apiService";
 import type { ResultData } from "../../../../../basic/api/types";
 import type { Callback } from "../../../../../basic/types/Callback";
 
@@ -18,17 +18,13 @@ export function Connect(props: { network: Network, connectedEmit: Callback, goBa
   }
 
   async function Connect(network: Network): Promise<boolean> {
-    const result: ResultData<Network> = await sendNetwork(network);
-    if(result.status && network.equals(result.value as Network)){
-      return true;
-    }
-    return false;
-    
+    const result: ResultData<boolean> = await ConnectNetwork(network);
+    return result.status && result.value as boolean;
   }
 
 
   function hadleConnected(){
-    sendEnd();
+    End();
     props.connectedEmit();
   }
 
