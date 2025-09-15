@@ -79,10 +79,13 @@ void WiFiSetup::initServer()
 
 bool WiFiSetup::attemptConnection(const char *ssid, const char *password)
 {
-    if (tryConnectWifi(ssid, password))
+    String32 newSsid = ssid;
+    String32 newPassword = password;
+    
+    if (tryConnectWifi(newSsid, newPassword))
     {
-        this->ssid = ssid;
-        this->password = password;
+        this->ssid = newSsid;
+        this->password = newPassword;
         return true;
     }
     return false;

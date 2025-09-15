@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "Logger.h"
-#include "Eeprom.h"
+#include "Storage.h"
 #include "MacAddress.h"
 #include "DeviceLed.h"
 #include "WiFiSetup.h"
@@ -28,6 +28,9 @@
 #define ENABLE_DEVICE_MODULE 1
 #endif
 
+#if ENABLE_STORAGE_MODULE
+#define ENABLE_STORAGE_MODULE 1
+#endif
 class App
 {
 public:
@@ -36,11 +39,10 @@ public:
     void update();
 
 private:
-    String32 cachedSsid;
-    String32 cachedPass;
+    SavedWifiData savedWifiData;
+    Storage<SavedWifiData> storage;
 
     Logger &logger;
-    Eeprom &eeprom;
     WiFiSetup &wifi;
     MacAddress &mac;
     TelegramBot &bot;
