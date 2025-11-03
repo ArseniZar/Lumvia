@@ -3,7 +3,7 @@ name: Deploy webApp to GitHub Pages
 on:
   push:
     branches:
-      - feature/webapp 
+      - main
 
 jobs:
   build-and-deploy:
