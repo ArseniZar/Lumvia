@@ -11,7 +11,6 @@ namespace api
         j[F("error_code")] = response.getCode();
         j[F("message")] = response.message;
         j('}');
-        Serial.println(su::Text(j));
         return String(su::Text(j));
     }
 
