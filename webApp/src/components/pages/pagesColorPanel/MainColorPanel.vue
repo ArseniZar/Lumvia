@@ -63,6 +63,16 @@ export default defineComponent({
         colorValue() {
             this.updateSelectedBox();
         },
+
+        device: {
+            deep: true,
+            handler(newDevice: Device) {
+                if (newDevice.equals(this.localDevice!)) {
+                    return;
+                }
+                this.localDevice = new Device(newDevice);
+            }
+        }
     },
 
     created() {
