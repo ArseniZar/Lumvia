@@ -31,6 +31,8 @@ public:
     void setPower(bool newStatus);
     void setBrightness(int newBrightness);
     void setColor(const char *color);
+    const char *getColor();
+    bool getStatus();
 
 private:
     Logger &logger;
@@ -41,7 +43,8 @@ private:
     RgbColor color;
     bool status;
 
-    RgbColor stringToRgbColor(const char *colorStr);
+    RgbColor stringHexToRgbColor(const char *colorStr);
+    StringN<8> rgbColorToStringHex(const RgbColor& c);
     RgbColor brightnessColor();
 };
 

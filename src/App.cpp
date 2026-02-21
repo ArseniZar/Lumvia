@@ -98,8 +98,18 @@ void App::bindDeviceToTelegramCommands()
     using namespace telegram;
 
     bot.registerCommand<ScanLedDeviceRequest, ScanLedDeviceResponse>(BOT_CMD_SCAN, [this](ScanLedDeviceRequest &request) -> ScanLedDeviceResponse
-                                                                     { return ScanLedDeviceResponse(device.getName(), std::move(ModelBaseResponse(request.command, device.getMacAddress().getMac()))); });
+        { 
+            return ScanLedDeviceResponse(device.getName(), std::move(ModelBaseResponse(request.command, device.getMacAddress().getMac()))); 
+        }
+    );
     bot.registerCommand<UpdateLedDeviceRequest, void>(BOT_CMD_UPDATE, [this](UpdateLedDeviceRequest &request) -> void
-                                                      {device.setColor(request.color);
-        device.setPower(request.status); });
+        {
+            device.setColor(request.color); device.setPower(request.status); 
+        }
+    );
+    bot.registerCommand<GetLedDeviceRequest, GetLedDeviceResponse>(BOT_CMD_GET,[this](GetLedDeviceRequest& request) -> GetLedDeviceResponse
+        {
+            return GetLedDeviceResponse(device.getColor(),device.getStatus(),std::move(ModelBaseResponse(request.command,device.getMacAddress().getMac())));
+        }
+    );
 }

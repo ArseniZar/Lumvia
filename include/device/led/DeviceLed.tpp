@@ -8,7 +8,7 @@ DeviceLed<T, E>::DeviceLed(Logger &logger, const MacAddress &mac, const char *na
                                                                                                                        countLed(countLed),
                                                                                                                        brightness(255),
                                                                                                                        color(Colors::WHITE),
-                                                                                                                       status(false) {}
+                                                                                                                       status(true) {}
 template <typename T, typename E>
 void DeviceLed<T, E>::begin()
 {
@@ -48,7 +48,7 @@ void DeviceLed<T, E>::setPower(bool newStatus)
 template <typename T, typename E>
 void DeviceLed<T, E>::setColor(const char *color)
 {
-    RgbColor hexColor = stringToRgbColor(color);
+    RgbColor hexColor = stringHexToRgbColor(color);
     this->color = std::move(hexColor);
     
     if (status)
@@ -59,7 +59,19 @@ void DeviceLed<T, E>::setColor(const char *color)
 }
 
 template <typename T, typename E>
-RgbColor DeviceLed<T, E>::stringToRgbColor(const char* colorStr)
+const char *DeviceLed<T, E>::getColor()
+{
+    return rgbColorToStringHex(color);
+}
+
+template <typename T, typename E>
+bool DeviceLed<T, E>::getStatus()
+{
+    return status;
+}
+
+template <typename T, typename E>
+RgbColor DeviceLed<T, E>::stringHexToRgbColor(const char* colorStr)
 {
     String hex = colorStr;
     if (hex.startsWith("#"))
@@ -86,4 +98,24 @@ RgbColor DeviceLed<T, E>::stringToRgbColor(const char* colorStr)
     uint8_t b = static_cast<uint8_t>(strtoul(buf, nullptr, 16));
 
     return RgbColor(r, g, b);
+}
+
+template<typename T, typename E>
+StringN<8> DeviceLed<T, E>::rgbColorToStringHex(const RgbColor& c)
+{
+    const char hexDigits[] = "0123456789abcdef";
+
+    StringN<8> out;
+    out += '#';
+
+    out += hexDigits[c.R >> 4];
+    out += hexDigits[c.R & 0x0F];
+
+    out += hexDigits[c.G >> 4];
+    out += hexDigits[c.G & 0x0F];
+
+    out += hexDigits[c.B >> 4];
+    out += hexDigits[c.B & 0x0F];
+
+    return out;
 }

@@ -41,6 +41,27 @@ namespace telegram
         String toMessage() const override;
     };
 
+    /*===================================== GetLedDevice =========================================================*/
+
+    class GetLedDeviceRequest final : public ModelBaseRequest
+    {
+    public:
+        GetLedDeviceRequest() = delete;
+        GetLedDeviceRequest(const ModelBaseRequest &base);
+        GetLedDeviceRequest(ModelBaseRequest &&base);
+        static std::unique_ptr<MessageConvertible> fromMessage(const su::Text *pairs, const int pairsSize);
+    };
+
+    class GetLedDeviceResponse final : public ModelBaseResponse
+    {
+    public:
+        StringN<8> color;
+        bool status;
+        GetLedDeviceResponse() = delete;
+        GetLedDeviceResponse(const char *color, const bool status, const ModelBaseResponse &base);
+        GetLedDeviceResponse(const char *color, const bool status,  ModelBaseResponse &&base);
+        String toMessage() const override;
+    };
     /*===================================== ************ =========================================================*/
 }
 
