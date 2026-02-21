@@ -4,6 +4,7 @@
 
 #include <Arduino.h>
 #include "JsonModelBase.h"
+#include "WiFiTypes.h"
 
 namespace api
 { /*===================================== Network ===========================================================*/
@@ -34,6 +35,30 @@ namespace api
         }
     };
 
+    /*===================================== ScanNetworkStarted =======================================================*/
+
+    class ScanNetworkStartedResponce final : public ModelBaseResponse
+    {
+    public:
+        bool status;
+        ScanNetworkStartedResponce() = delete;
+        ScanNetworkStartedResponce(const bool status, const ModelBaseResponse &base);
+        ScanNetworkStartedResponce(bool status,ModelBaseResponse &&base);
+        gson::Str toJson() const override;
+    };
+
+    /*===================================== ScanStatus =======================================================*/
+
+    class ScanStatusResponce final : public ModelBaseResponse
+    {
+    public:
+        ScanState status;
+        ScanStatusResponce() = delete;
+        ScanStatusResponce(const ScanState &status, const ModelBaseResponse &base);
+        ScanStatusResponce(ScanState &&status, ModelBaseResponse &&base);
+        gson::Str toJson() const override;
+    };
+    
     /*===================================== ScanNetwork =======================================================*/
 
     // class ScanNetworkRequest final : public ModelBaseRequest
@@ -44,14 +69,14 @@ namespace api
     //     ScanNetworkRequest(const ModelBaseRequest &base);
     //     static std::unique_ptr<JsonConvertible> fromJson(const gson::Entry &data);
     // };
-
-    class ScanNetworksResponce final : public ModelBaseResponse
+    
+    class ScanNetworkResponce final : public ModelBaseResponse
     {
     public:
         std::vector<Network> networks;
-        ScanNetworksResponce() = delete;
-        ScanNetworksResponce(const std::vector<Network> &networks, const ModelBaseResponse &base);
-        ScanNetworksResponce(std::vector<Network> &&networks, ModelBaseResponse &&base);
+        ScanNetworkResponce() = delete;
+        ScanNetworkResponce(const std::vector<Network> &networks, const ModelBaseResponse &base);
+        ScanNetworkResponce(std::vector<Network> &&networks, ModelBaseResponse &&base);
         gson::Str toJson() const override;
     };
 
@@ -76,5 +101,22 @@ namespace api
         ConnectNetworkResponce(bool status, ModelBaseResponse &&base);
         gson::Str toJson() const override;
     };
+
+    /*===================================== StatusWifi =======================================================*/
+
+    class WifiStatusResponce final : public ModelBaseResponse
+    {
+    public:
+        ConnState status;
+        WifiStatusResponce() = delete;
+        WifiStatusResponce(const ConnState &status, const ModelBaseResponse &base);
+        WifiStatusResponce(ConnState &&status, ModelBaseResponse &&base);
+        gson::Str toJson() const override;
+    };
+
+    
+
+
+    /*===================================== other =======================================================*/
 }
 #endif // DEVICE_MODELS_H

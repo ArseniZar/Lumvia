@@ -2,61 +2,98 @@
 
 namespace espweb
 {
-    WebServer::WebServer(Logger &logger, int port) : logger(logger), server(port)
+    WebServer::WebServer(Logger &logger, int port) : logger(logger), server(port), serverRunning(false), lastRequestTime(millis())
     {
         MDNS.addService(F("http"), F("tcp"), port);
     }
 
     /*========================================begin=============================================================*/
 
-    void WebServer::begin(std::function<std::vector<api::Network>()> scanAvailableWiFiNetworks,
-                          std::function<bool(const char *, const char *)> attemptConnection)
+    void WebServer::begin(
+                   std::function<bool()> scanWifiNetworksStarted,
+                   std::function<ScanState()> scanStatus,
+                   std::function<std::vector<api::Network>()> getScanWifiNetworksResults,
+                   std::function<bool(const char *, const char *)> attemptConnection,
+                   std::function<ConnState()> wifiStatus)
     {
-        server.keepAlive(true);
 
         server.on(F("/"), HTTP_GET, [this]()
-                  { this->handleRoot(); });
+                  { lastRequestTime=millis(); this->handleRoot(); });
+
+        server.on(F("/scan/start"), HTTP_GET, [this, scanWifiNetworksStarted]()
+                  { lastRequestTime=millis(); this->handleScanStarted(scanWifiNetworksStarted); });
+
+        server.on(F("/scan/status"), HTTP_GET, [this, scanStatus]()
+                  { lastRequestTime=millis(); this->handleScanStatus(scanStatus); });
+
+        server.on(F("/scan/result"), HTTP_GET, [this, getScanWifiNetworksResults]()
+                  { lastRequestTime=millis(); this->handleScanResult(getScanWifiNetworksResults); });
+        
+        server.on(F("/connect/start"), HTTP_POST, [this, attemptConnection]()
+                  { lastRequestTime=millis(); this->handleConnect(attemptConnection); });
+
+        server.on(F("/connect/status"), HTTP_GET, [this, wifiStatus]()
+                  { lastRequestTime=millis(); this->handleWifiStatus(wifiStatus); });
+
+        server.on(F("/end"), HTTP_GET, [this]()
+                  { lastRequestTime=millis(); this->handleEnd(); });
 
         server.on(F("/"), HTTP_OPTIONS, [this]()
                   {    
                        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
                        server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
                        server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
-                       server.send(200); });
+                       server.send(204); });
 
-        server.on(F("/scan"), HTTP_GET, [this, scanAvailableWiFiNetworks]()
-                  { this->handleScan(scanAvailableWiFiNetworks); });
-
-        server.on(F("/scan"), HTTP_OPTIONS, [this]()
+       
+        server.on(F("/scan/start"), HTTP_OPTIONS, [this]()
                   {
                        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
                        server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
                        server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
-                       server.send(200); });
-
-        server.on(F("/network"), HTTP_POST, [this, attemptConnection]()
-                  { this->handleNetwork(attemptConnection); });
-
-        server.on(F("/network"), HTTP_OPTIONS, [this]()
+                       server.send(204); });
+        
+        server.on(F("/scan/status"), HTTP_OPTIONS, [this]()
+                  {
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(204); });
+        
+        server.on(F("/scan/result"), HTTP_OPTIONS, [this]()
+                  {
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(204); });
+        
+        server.on(F("/connect/start"), HTTP_OPTIONS, [this]()
                   {
                        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
                        server.sendHeader(F("Access-Control-Allow-Methods"), F("POST, OPTIONS"));
                        server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
-                       server.send(200); });
+                       server.send(204); });
 
-        server.on(F("/end"), HTTP_GET, [this]()
-                  { this->handleEnd(); });
+        server.on(F("/connect/status"), HTTP_OPTIONS, [this]()
+                  {
+                       server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+                       server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
+                       server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
+                       server.send(204); });
 
         server.on(F("/end"), HTTP_OPTIONS, [this]()
                   {
                        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
                        server.sendHeader(F("Access-Control-Allow-Methods"), F("GET, OPTIONS"));
                        server.sendHeader(F("Access-Control-Allow-Headers"), F("Content-Type"));
-                       server.send(200); });
+                       server.send(204); });
+            
+        
 
         server.onNotFound([this]()
                           { this->handleNotFound(); });
 
+           
         server.begin();
         serverRunning = true;
         logger.log(LOG_INFO, [&]() -> String128
@@ -73,33 +110,70 @@ namespace espweb
         server.send_P(200, "text/html", index);
     }
 
-    /*========================================handleScan=============================================================*/
-
-    void WebServer::handleScan(std::function<std::vector<api::Network>()> scanAvailableWiFiNetworks)
+    /*======================================== handleScanStarted =============================================================*/
+    
+    void WebServer::handleScanStarted(std::function<bool()> scanWifiNetworksStarted)
     {
         logger.log(LOG_DEBUG, [&]() -> String128
-                   {String128 buf; buf.add(F("(WebServer::handleScan) Processing scan networks request.")); return buf; });
-        const auto responce = api::ApiSuccessResponse<api::ScanNetworksResponce>(200, std::move(api::ScanNetworksResponce(std::move(scanAvailableWiFiNetworks()), std::move(api::ModelBaseResponse()))));
+                   {String128 buf; buf.add(F("(WebServer::handleScanStarted) Processing start scan networks request.")); return buf; });
+        const auto responce = api::ApiSuccessResponse<api::ScanNetworkStartedResponce>(200, std::move(api::ScanNetworkStartedResponce(scanWifiNetworksStarted(), std::move(api::ModelBaseResponse()))));
         server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
-        server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
+        String payload = api::serializeApiResponse(responce);
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleScanStarted) Response payload: ")); buf.add(payload.c_str()); return buf; });
+        server.send(responce.getCode(), F("application/json"), payload);
+    }
+
+    /*======================================== handleScanStatus =============================================================*/
+    
+    void WebServer::handleScanStatus(std::function<ScanState()> scanStatus)
+    {
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleScanStatus) Processing scan status request.")); return buf; });
+        const auto responce = api::ApiSuccessResponse<api::ScanStatusResponce>(200, std::move(api::ScanStatusResponce(scanStatus(), std::move(api::ModelBaseResponse()))));
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+        String payload = api::serializeApiResponse(responce);
+        logger.log(LOG_DEBUG, [&]() -> String128
+               {String128 buf; buf.add(F("(WebServer::handleScanStatus) Response payload: ")); buf.add(payload.c_str()); return buf; });
+        server.send(responce.getCode(), F("application/json"), payload);
+    }
+
+    /*======================================== handleScanResult =============================================================*/
+
+    void WebServer::handleScanResult(std::function<std::vector<api::Network>()> getScanWifiNetworksResults)
+    {
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleScanResult) Processing scan result request.")); return buf; });
+        const auto responce = api::ApiSuccessResponse<api::ScanNetworkResponce>(200, std::move(api::ScanNetworkResponce(std::move(getScanWifiNetworksResults()), std::move(api::ModelBaseResponse()))));
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+        String payload = api::serializeApiResponse(responce);
+        logger.log(LOG_DEBUG, [&]() -> String128
+               {String128 buf; buf.add(F("(WebServer::handleScanResult) Response payload: ")); buf.add(payload.c_str()); return buf; });
+        server.send(responce.getCode(), F("application/json"), payload);
     }
 
     /*========================================handleNetwork==========================================================*/
 
-    void WebServer::handleNetwork(std::function<bool(const char *, const char *)> attemptConnection)
+    void WebServer::handleConnect(std::function<bool(const char *, const char *)> attemptConnectionStarted)
     {
         logger.log(LOG_DEBUG, [&]() -> String128
-                   {String128 buf; buf.add(F("(WebServer::handleNetwork) Received network connect request.")); return buf; });
+                   {String128 buf; buf.add(F("(WebServer::handleConnect) Received network connect request.")); return buf; });
 
         const String &body = server.arg(F("plain"));
+
+        logger.log(LOG_DEBUG, [&]() -> String128
+               {String128 buf; buf.add(F("(WebServer::handleConnect) Raw request body: ")); buf.add(body.c_str()); return buf; });
 
         if (body.isEmpty())
         {
             logger.log(LOG_WARN, [&]() -> String128
-                       {String128 buf; buf.add(F("(WebServer::handleNetwork) Empty request body.")); return buf; });
+                       {String128 buf; buf.add(F("(WebServer::handleConnect) Empty request body.")); return buf; });
             const auto responce = api::ApiErrorResponse(400, String32(F("Empty request body")));
             server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
-            server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
+            String payload = api::serializeApiResponse(responce);
+            server.send(responce.getCode(), F("application/json"), payload);
+            logger.log(LOG_DEBUG, [&]() -> String128
+                       {String128 buf; buf.add(F("(WebServer::handleConnect) Response payload (error empty body): ")); buf.add(payload.c_str()); return buf; });
             return;
         }
 
@@ -107,18 +181,38 @@ namespace espweb
         if (apiRequstPtr->isOk())
         {
             auto *successApiRequstPtr = static_cast<api::ApiSuccessRequest<api::ConnectNetworkRequest> *>(apiRequstPtr.get());
-            const bool status = attemptConnection(successApiRequstPtr->data.network.ssid, successApiRequstPtr->data.network.password);
+            const bool status = attemptConnectionStarted(successApiRequstPtr->data.network.ssid, successApiRequstPtr->data.network.password);
             const auto responce = api::ApiSuccessResponse<api::ConnectNetworkResponce>(200, std::move(api::ConnectNetworkResponce(status, std::move(successApiRequstPtr->data))));
             server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
-            server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
+            String payload = api::serializeApiResponse(responce);
+            logger.log(LOG_DEBUG, [&]() -> String128
+                       {String128 buf; buf.add(F("(WebServer::handleConnect) Response payload (success): ")); buf.add(payload.c_str()); return buf; });
+            server.send(responce.getCode(), F("application/json"), payload);
         }
         else
         {
             auto *errorApiRequstPtr = static_cast<api::ApiErrorRequest *>(apiRequstPtr.get());
             const auto responce = api::ApiErrorResponse(400, errorApiRequstPtr->message);
             server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
-            server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
+            String payload = api::serializeApiResponse(responce);
+            logger.log(LOG_DEBUG, [&]() -> String128
+                       {String128 buf; buf.add(F("(WebServer::handleConnect) Response payload (parse error): ")); buf.add(payload.c_str()); return buf; });
+            server.send(responce.getCode(), F("application/json"), payload);
         }
+    }
+
+    /*========================================handleStatusWifi==========================================================*/
+
+    void WebServer::handleWifiStatus(std::function<ConnState()> wifiStatus)
+    {
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleWifiStatus) Received WiFi status request.")); return buf; });
+        const auto responce = api::ApiSuccessResponse<api::WifiStatusResponce>(200, std::move(api::WifiStatusResponce(std::move(wifiStatus()), std::move(api::ModelBaseResponse()))));
+        server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+        String payload = api::serializeApiResponse(responce);
+        logger.log(LOG_DEBUG, [&]() -> String128
+                   {String128 buf; buf.add(F("(WebServer::handleWifiStatus) Response payload: ")); buf.add(payload.c_str()); return buf; });
+        server.send(responce.getCode(), F("application/json"), payload);
     }
 
     /*========================================handleEnd============================================================*/
@@ -140,7 +234,10 @@ namespace espweb
                    {String128 buf; buf.add(F("(WebServer::handleNotFound) Resource not found.")); return buf; });
         const auto responce = api::ApiErrorResponse(400, String32(F("Resource not found")));
         server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
-        server.send(responce.getCode(), F("application/json"), api::serializeApiResponse(responce));
+        String payload = api::serializeApiResponse(responce);
+        logger.log(LOG_DEBUG, [&]() -> String128
+               {String128 buf; buf.add(F("(WebServer::handleNotFound) Response payload: ")); buf.add(payload.c_str()); return buf; });
+        server.send(responce.getCode(), F("application/json"), payload);
     }
 
     /*========================================handleClient==========================================================*/
@@ -165,5 +262,10 @@ namespace espweb
     bool WebServer::isRunning() const
     {
         return serverRunning;
+    }
+
+    unsigned long WebServer::getLastRequestTime() const
+    {
+        return lastRequestTime;
     }
 }

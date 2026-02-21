@@ -22,8 +22,6 @@ void App::begin()
 #if ENABLE_STORAGE_MODULE
     storage.begin();
     savedWifiData = storage.readData();
-    Serial.println(savedWifiData.ssid);
-    Serial.println(savedWifiData.password);
 #endif
 
 #if ENABLE_DEVICE_MODULE
@@ -38,7 +36,7 @@ void App::begin()
 #endif
 
 #if ENABLE_WIFI_MODULE && ENABLE_TELEGRAM_BOT_MODULE
-    if (wifi.status() == ConnState::WL_CONNECTED)
+    if (wifi.statusWifi() == ConnState::WL_CONNECTED)
     {
         commitWiFiIfChanged();
 #if ENABLE_TELEGRAM_BOT_MODULE
@@ -58,12 +56,12 @@ void App::begin()
 void App::update()
 {
 #if ENABLE_WIFI_MODULE
-    if (wifi.status() != ConnState::WL_CONNECTED)
+    if (wifi.statusWifi() != ConnState::WL_CONNECTED)
     {
         wifi.setWiFiConfig(savedWifiData.ssid, savedWifiData.password);
         wifi.begin();
 #if ENABLE_WIFI_MODULE
-        if (wifi.status() == ConnState::WL_CONNECTED)
+        if (wifi.statusWifi() == ConnState::WL_CONNECTED)
         {
             commitWiFiIfChanged();
         }

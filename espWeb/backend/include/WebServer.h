@@ -12,6 +12,7 @@
 #include "DeviceModels.h"
 #include "ApiParse.h"
 #include "ApiSerialization.h"
+#include "WiFiTypes.h"
 
 namespace espweb
 {
@@ -24,20 +25,29 @@ namespace espweb
         void stop();
         void handleClient();
         bool isRunning() const;
-        void begin(std::function<std::vector<api::Network>()> scanAvailableWiFiNetworks,
-                   std::function<bool(const char *, const char *)> attemptConnection);
+        unsigned long getLastRequestTime() const;
+        
+        void begin(std::function<bool()> scanWifiNetworksStarted,
+                   std::function<ScanState()> scanStatus,
+                   std::function<std::vector<api::Network>()> getScanWifiNetworksResults,
+                   std::function<bool(const char *, const char *)> attemptConnectionStarted,
+                   std::function<ConnState()> wifiStatus);
 
     private:
         Logger &logger;
         ESP8266WebServer server;
 
-        bool serverRunning = false;
-        
+        bool serverRunning;
+        unsigned long lastRequestTime;
+
         void handleEnd();
         void handleRoot();
         void handleNotFound();
-        void handleScan(std::function<std::vector<api::Network>()> scanAvailableWiFiNetworks);
-        void handleNetwork(std::function<bool(const char *, const char *)> attemptConnection);
+        void handleScanStarted(std::function<bool()> scanWifiNetworksStarted);
+        void handleScanStatus(std::function<ScanState()> scanStatus);
+        void handleScanResult(std::function<std::vector<api::Network>()> getScanWifiNetworksResults);
+        void handleConnect(std::function<bool(const char *, const char *)> attemptConnectionStarted);
+        void handleWifiStatus(std::function<ConnState()> wifiStatus);
     };
 
 }

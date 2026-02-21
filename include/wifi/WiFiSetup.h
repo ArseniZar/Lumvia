@@ -9,23 +9,19 @@
 #include <vector>
 #include "Logger.h"
 #include "WebServer.h"
+#include "WiFiTypes.h"
 
 #ifndef WIFI_CONNECTION_TIMEOUT_MS
 #define WIFI_CONNECTION_TIMEOUT_MS 10000
 #endif
 
-enum class ConnState : int
-{
-    WL_NO_SHIELD = 255,
-    WL_IDLE_STATUS = 0,
-    WL_NO_SSID_AVAIL = 1,
-    WL_SCAN_COMPLETED = 2,
-    WL_CONNECTED = 3,
-    WL_CONNECT_FAILED = 4,
-    WL_CONNECTION_LOST = 5,
-    WL_WRONG_PASSWORD = 6,
-    WL_DISCONNECTED = 7
-};
+#ifndef WIFI_RETRY_DELAY_MS
+#define WIFI_RETRY_DELAY_MS 10000
+#endif
+
+#ifndef WIFI_AFTER_WEBSERVER_IDLE_MS
+#define WIFI_AFTER_WEBSERVER_IDLE_MS 10000
+#endif
 
 class WiFiSetup
 {
@@ -33,13 +29,15 @@ public:
     bool begin();
     static WiFiSetup &init(Logger &logger);
     bool attemptConnection(const char *ssid, const char *password);
+    bool attemptConnectionAsync(const char *ssid, const char *password);
     void setAPConfig(const char *apSsid, const char *apPassword);
     void setWiFiConfig(const char *ssid, const char *password);
     void setMdnsName(const char *mdnsName);
     StringN<18> getMAC() const;
     const char *getSsid() const;
     const char *getPass() const;
-    ConnState status();
+    ConnState statusWifi();
+    ScanState statusScan();
 
 private:
     WiFiSetup(Logger &logger);
@@ -49,17 +47,34 @@ private:
 
     String32 apSsid;
     String32 apPassword;
+
     String32 ssid;
     String32 password;
+
+    String32 attemptSsid;
+    String32 attemptPassword;
+
     String32 mdnsName;
+    
+    static constexpr uint8_t MAX_WIFI_HANDLER = 2;;
+    WiFiEventHandler onGotIpHandlers[MAX_WIFI_HANDLER];
+    WiFiEventHandler onDisconnectedHandlers[MAX_WIFI_HANDLER];
+
+    void initServer();
+    void configureWifiPerformance();
+
+    bool scanWifiNetworksAsync();
+    std::vector<api::Network> scanWifiNetworks();
+    std::vector<api::Network> getScanWifiNetworksAsyncResults();
 
     bool stopAP();
     bool stopMDNS();
-    void initServer();
-    std::vector<api::Network> scanAvailableWiFiNetworks();
     bool startMDNS(const String32 &mdnsName);
-    bool tryConnectWifi(const String32 &ssid, const String32 &password);
     bool startAP(const String32 &apSsid, const String32 &apPassword);
+
+    bool tryConnectWifi(const String32 &ssid, const String32 &password);
+    bool tryConnectWifiAsync(const String32 &ssid, const String32 &password);
+
 };
 
 #endif // WIFI_SETUP_H

@@ -1,7 +1,55 @@
 #include "DeviceModels.h"
 
 namespace api
-{
+{   
+    /*===================================== ScanNetworkStarted ==========================================================*/
+
+    namespace ScanNetworkStartedResponceKey
+    {
+        constexpr const char *SCAN = "scan";
+        constexpr const char *STARTED = "started";
+    }
+
+    ScanNetworkStartedResponce::ScanNetworkStartedResponce(const bool status, const ModelBaseResponse &base) : ModelBaseResponse(base), status(status) {};
+    ScanNetworkStartedResponce::ScanNetworkStartedResponce(bool status, ModelBaseResponse &&base) : ModelBaseResponse(std::move(base)), status(status) {};
+
+    gson::Str ScanNetworkStartedResponce::toJson() const
+    {
+        const int size = 1;
+        using namespace ScanNetworkStartedResponceKey;
+        std::tuple<const char *, gson::Type, String> pairs[size] = {
+            {STARTED, gson::Type::Bool, status ? "true" : "false"}};
+
+        gson::Str j;
+        j += ModelBaseResponse::toJson();
+        j[SCAN] = JsonSerialization::serializationJson(pairs, size);
+        return j;
+    }
+
+    /*===================================== ScanStatus ==========================================================*/
+
+    namespace ScanStatusResponceKey
+    {
+        constexpr const char *STATUS = "status";
+        constexpr const char *CODE = "code";
+    }
+
+    ScanStatusResponce::ScanStatusResponce(const ScanState &status, const ModelBaseResponse &base) : ModelBaseResponse(base), status(status) {};
+    ScanStatusResponce::ScanStatusResponce(ScanState &&status, ModelBaseResponse &&base) : ModelBaseResponse(std::move(base)), status(std::move(status)) {};
+
+    gson::Str ScanStatusResponce::toJson() const
+    {
+        const int size = 1;
+        using namespace ScanStatusResponceKey;
+        std::tuple<const char *, gson::Type, String> pairs[size] = {
+            {CODE, gson::Type::Int, String(static_cast<int>(status))}};
+
+        gson::Str j;
+        j += ModelBaseResponse::toJson();
+        j[STATUS] = JsonSerialization::serializationJson(pairs, size);
+        return j;
+    }
+
     /*===================================== ScanNetwork ==========================================================*/
 
     // namespace ScanNetworkRequestKey
@@ -48,10 +96,10 @@ namespace api
         constexpr const char *NETWORKS = "networks";
     }
 
-    ScanNetworksResponce::ScanNetworksResponce(const std::vector<Network> &networks, const ModelBaseResponse &base) : ModelBaseResponse(base), networks(networks) {};
-    ScanNetworksResponce::ScanNetworksResponce(std::vector<Network> &&networks, ModelBaseResponse &&base) : ModelBaseResponse(std::move(base)), networks(std::move(networks)) {};
+    ScanNetworkResponce::ScanNetworkResponce(const std::vector<Network> &networks, const ModelBaseResponse &base) : ModelBaseResponse(base), networks(networks) {};
+    ScanNetworkResponce::ScanNetworkResponce(std::vector<Network> &&networks, ModelBaseResponse &&base) : ModelBaseResponse(std::move(base)), networks(std::move(networks)) {};
 
-    gson::Str ScanNetworksResponce::toJson() const
+    gson::Str ScanNetworkResponce::toJson() const
     {
         gson::Str j;
         j += ModelBaseResponse::toJson();
@@ -125,7 +173,9 @@ namespace api
 
     namespace ConnectNetworkResponceKey
     {
-        constexpr const char *STATUS = "status";
+        constexpr const char *CONNECT = "connect";
+        constexpr const char *STARTED = "started";
+        
     }
 
     ConnectNetworkResponce::ConnectNetworkResponce(const bool status, const ModelBaseResponse &base) : ModelBaseResponse(base), status(status) {}
@@ -136,11 +186,39 @@ namespace api
         const int size = 1;
         using namespace ConnectNetworkResponceKey;
         std::tuple<const char *, gson::Type, String> pairs[size] = {
-            {STATUS, gson::Type::Bool, status ? "true" : "false"}};
+            {STARTED, gson::Type::Bool, status ? "true" : "false"}};
+
+        gson::Str j;
+        j += ModelBaseResponse::toJson();
+        j[CONNECT] = JsonSerialization::serializationJson(pairs, size);
+        return j;
+    }
+
+    /*===================================== StatusWifi ==========================================================*/
+
+    namespace StatusWifiResponceKey
+    {
+        constexpr const char *STATUS = "status";
+        constexpr const char *CODE = "code";
+    }
+
+    WifiStatusResponce::WifiStatusResponce(const ConnState &status, const ModelBaseResponse &base) : ModelBaseResponse(base), status(status) {};
+    WifiStatusResponce::WifiStatusResponce(ConnState &&status, ModelBaseResponse &&base) : ModelBaseResponse(std::move(base)), status(std::move(status)) {};
+
+    gson::Str WifiStatusResponce::toJson() const
+    {
+        const int size = 1;
+        using namespace StatusWifiResponceKey;
+        std::tuple<const char *, gson::Type, String> pairs[size] = {
+            {CODE, gson::Type::Int, String(static_cast<int>(status))}};
 
         gson::Str j;
         j += ModelBaseResponse::toJson();
         j[STATUS] = JsonSerialization::serializationJson(pairs, size);
         return j;
     }
+
+    
+
+    /*===================================== other ==========================================================*/
 }
