@@ -1,6 +1,6 @@
 #pragma once
 #include "DeviceLed.h"
-// DeviceLed.tpp
+
 template <typename T, typename E>
 DeviceLed<T, E>::DeviceLed(Logger &logger, const MacAddress &mac, const char *name, uint16_t countLed, uint8_t pin) : DeviceBase(mac, name),
                                                                                                                        logger(logger),
@@ -26,6 +26,15 @@ void DeviceLed<T, E>::setBrightness(int newBrightness)
         newBrightness = 255;
 
     brightness = newBrightness;
+    logger.log(LOG_INFO, [&]() -> String256
+                   { String256 buf;
+                     buf.add(F("[DeviceLed::setBrightness] Set brightness for device '"));
+                     buf.add(getName().c_str());
+                     buf.add(F("' ("));
+                     buf.add(mac.getMac());
+                     buf.add(F(") to "));
+                     buf.add(brightness);
+                     return buf; });
 }
 
 template <typename T, typename E>
@@ -40,6 +49,19 @@ RgbColor DeviceLed<T, E>::brightnessColor()
 template <typename T, typename E>
 void DeviceLed<T, E>::setPower(bool newStatus)
 {
+    if (newStatus != status)
+    {
+        logger.log(LOG_INFO, [&]() -> String256
+                   { String256 buf;
+                     buf.add(F("[DeviceLed::setPower] Set power for device '"));
+                     buf.add(getName().c_str());
+                     buf.add(F("' ("));
+                     buf.add(mac.getMac());
+                     buf.add(F(") to "));
+                     buf.add(newStatus ? F("ON") : F("OFF"));
+                     return buf; });
+    }
+
     device.ClearTo(newStatus ? brightnessColor() : Colors::BLACK);
     device.Show();
     this->status = newStatus;
@@ -48,6 +70,15 @@ void DeviceLed<T, E>::setPower(bool newStatus)
 template <typename T, typename E>
 void DeviceLed<T, E>::setColor(const char *color)
 {
+    logger.log(LOG_INFO, [&]() -> String256
+                        { String256 buf;
+                            buf.add(F("[DeviceLed::setColor] Set color for device '"));
+                            buf.add(getName().c_str());
+                            buf.add(F("' to """));
+                            buf.add(color);
+                            buf.add(F(""));
+                            return buf; });
+
     RgbColor hexColor = stringHexToRgbColor(color);
     this->color = std::move(hexColor);
     
