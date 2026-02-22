@@ -16,11 +16,11 @@
 #endif
 
 #ifndef WIFI_RETRY_DELAY_MS
-#define WIFI_RETRY_DELAY_MS 10000
+#define WIFI_RETRY_DELAY_MS 60000
 #endif
 
 #ifndef WIFI_AFTER_WEBSERVER_IDLE_MS
-#define WIFI_AFTER_WEBSERVER_IDLE_MS 10000
+#define WIFI_AFTER_WEBSERVER_IDLE_MS 120000
 #endif
 
 class WiFiSetup
@@ -33,7 +33,7 @@ public:
     void setAPConfig(const char *apSsid, const char *apPassword);
     void setWiFiConfig(const char *ssid, const char *password);
     void setMdnsName(const char *mdnsName);
-    StringN<18> getMAC() const;
+    StringN<18> getMacAddress() const;
     const char *getSsid() const;
     const char *getPass() const;
     ConnState statusWifi();

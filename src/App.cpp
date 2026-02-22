@@ -4,7 +4,7 @@ App::App() : savedWifiData(),
              storage(Storage<SavedWifiData>("/data.dat", 'W')),
              logger(Logger::init(LOGGER_DEBUG_MODE)),
              wifi(WiFiSetup::init(logger)),
-             mac(MacAddress::init(wifi.getMAC())),
+             mac(MacAddress::init(wifi.getMacAddress())),
              bot(TelegramBot::init(logger, BOT_TOKEN, mac)),
              device(DeviceLed<NeoBrgFeature, NeoEsp8266Dma800KbpsMethod>(logger, mac, DEVICE_NAME, LED_COUNT, DEVICE_PIN))
 {
@@ -35,21 +35,21 @@ void App::begin()
     wifi.begin();
 #endif
 
-#if ENABLE_WIFI_MODULE && ENABLE_TELEGRAM_BOT_MODULE
+#if ENABLE_WIFI_MODULE
     if (wifi.statusWifi() == ConnState::WL_CONNECTED)
     {
         commitWiFiIfChanged();
-#if ENABLE_TELEGRAM_BOT_MODULE
-
-        bot.setLimitMessage(BOT_LIMIT);
-        bot.setPeriodUpdate(BOT_PERIOD);
-        bot.begin();
-#if ENABLE_DEVICE_MODULE && ENABLE_TELEGRAM_BOT_MODULE
-        bindDeviceToTelegramCommands();
-#endif
-#endif
     }
+#endif
 
+#if ENABLE_TELEGRAM_BOT_MODULE
+    bot.setLimitMessage(BOT_LIMIT);
+    bot.setPeriodUpdate(BOT_PERIOD);
+    bot.begin();
+
+#if ENABLE_DEVICE_MODULE 
+    bindDeviceToTelegramCommands();
+#endif
 #endif
 }
 
@@ -60,19 +60,21 @@ void App::update()
     {
         wifi.setWiFiConfig(savedWifiData.ssid, savedWifiData.password);
         wifi.begin();
-#if ENABLE_WIFI_MODULE
         if (wifi.statusWifi() == ConnState::WL_CONNECTED)
         {
             commitWiFiIfChanged();
         }
-#endif
     }
-#if ENABLE_TELEGRAM_BOT_MODULE
     else
     {
-        bot.tick();
-    }
 #endif
+
+#if ENABLE_TELEGRAM_BOT_MODULE
+        bot.tick();
+#endif
+
+#if ENABLE_WIFI_MODULE
+    }
 #endif
 }
 

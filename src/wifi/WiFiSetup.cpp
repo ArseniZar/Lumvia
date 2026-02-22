@@ -488,7 +488,7 @@ std::vector<api::Network> WiFiSetup::getScanWifiNetworksAsyncResults() {
     return networks;
 }
 
-StringN<18> WiFiSetup::getMAC() const
+StringN<18> WiFiSetup::getMacAddress() const
 {
     return WiFi.macAddress().c_str();
 }
