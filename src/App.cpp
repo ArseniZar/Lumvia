@@ -3,7 +3,7 @@
 App::App() : savedWifiData(),
              storage(Storage<SavedWifiData>("/data.dat", 'W')),
              logger(Logger::init(LOGGER_DEBUG_MODE)),
-             wifi(WiFiSetup::init(logger)),
+             wifi(WiFiSetup::init(logger, AP_SSID, AP_PASS, MDNS_NAME)),
              mac(MacAddress::init(wifi.getMacAddress())),
              bot(TelegramBot::init(logger, BOT_TOKEN, mac)),
              device(DeviceLed<NeoBrgFeature, NeoEsp8266Dma800KbpsMethod>(logger, mac, DEVICE_NAME, LED_COUNT, DEVICE_PIN))
@@ -97,17 +97,17 @@ void App::bindDeviceToTelegramCommands()
 {
     using namespace telegram;
 
-    bot.registerCommand<ScanLedDeviceRequest, ScanLedDeviceResponse>(BOT_CMD_SCAN, [this](ScanLedDeviceRequest &request) -> ScanLedDeviceResponse
+    bot.registerCommand<ScanLedDeviceRequest, ScanLedDeviceResponse>(CMD_SCAN, [this](ScanLedDeviceRequest &request) -> ScanLedDeviceResponse
         { 
             return ScanLedDeviceResponse(device.getName(), std::move(ModelBaseResponse(request.command, device.getMacAddress().getMac()))); 
         }
     );
-    bot.registerCommand<UpdateLedDeviceRequest, void>(BOT_CMD_UPDATE, [this](UpdateLedDeviceRequest &request) -> void
+    bot.registerCommand<UpdateLedDeviceRequest, void>(CMD_UPDATE, [this](UpdateLedDeviceRequest &request) -> void
         {
             device.setColor(request.color); device.setPower(request.status); 
         }
     );
-    bot.registerCommand<GetLedDeviceRequest, GetLedDeviceResponse>(BOT_CMD_GET,[this](GetLedDeviceRequest& request) -> GetLedDeviceResponse
+    bot.registerCommand<GetLedDeviceRequest, GetLedDeviceResponse>(CMD_GET,[this](GetLedDeviceRequest& request) -> GetLedDeviceResponse
         {
             return GetLedDeviceResponse(device.getColor(),device.getStatus(),std::move(ModelBaseResponse(request.command,device.getMacAddress().getMac())));
         }

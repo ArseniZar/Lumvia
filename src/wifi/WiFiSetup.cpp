@@ -1,21 +1,21 @@
 #include "WiFiSetup.h"
 
-WiFiSetup &WiFiSetup::init(Logger &logger)
+WiFiSetup &WiFiSetup::init(Logger &logger, const char* apSsid, const char* apPassword, const char* mdnsName)
 {
-    static WiFiSetup instance(logger);
+    static WiFiSetup instance(logger, apSsid, apPassword, mdnsName);
     return instance;
 }
 
-WiFiSetup::WiFiSetup(Logger &logger)
+WiFiSetup::WiFiSetup(Logger &logger, const char* apSsid, const char* apPassword, const char* mdnsName)
     : logger(logger),
       webserver(logger, 80),
-      apSsid(F("SmartHome")),
-      apPassword(F("12345678")),
+      apSsid(apSsid),
+      apPassword(apPassword),
       ssid(F("")),
       password(F("")),
       attemptSsid(F("")),
       attemptPassword(F("")),
-      mdnsName(F("smarthome")),
+      mdnsName(mdnsName),
       onGotIpHandlers{},
       onDisconnectedHandlers{}
 {

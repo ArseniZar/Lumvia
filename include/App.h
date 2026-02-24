@@ -10,6 +10,7 @@
 #include "DeviceLed.h"
 #include "WiFiSetup.h"
 #include "TelegramBot.h"
+#include "TelegramCommands.h"
 #include "LedDeviceModels.h"
 
 #ifndef LOGGER_DEBUG_MODE

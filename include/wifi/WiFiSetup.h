@@ -27,7 +27,7 @@ class WiFiSetup
 {
 public:
     bool begin();
-    static WiFiSetup &init(Logger &logger);
+    static WiFiSetup &init(Logger &logger, const char* apSsid, const char* apPassword, const char* mdnsName);
     bool attemptConnection(const char *ssid, const char *password);
     bool attemptConnectionAsync(const char *ssid, const char *password);
     void setAPConfig(const char *apSsid, const char *apPassword);
@@ -40,7 +40,7 @@ public:
     ScanState statusScan();
 
 private:
-    WiFiSetup(Logger &logger);
+    WiFiSetup(Logger &logger, const char* apSsid, const char* apPassword, const char* mdnsName);
 
     Logger &logger;
     espweb::WebServer webserver;
