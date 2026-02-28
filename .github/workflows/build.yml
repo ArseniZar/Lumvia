@@ -32,4 +32,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: webApp-build
-          path: dist
+          path: webApp/dist
