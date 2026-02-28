@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: webApp-build
           path: webApp/dist
