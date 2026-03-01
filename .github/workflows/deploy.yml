@@ -1,7 +1,7 @@
 name: Deploy webApp to GitHub Pages
 
 on:
-  workflow_dispatch:   
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -9,13 +9,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v6
         with:
-          name: webApp-build
-          path: webApp/dist
+          workflow: build.yml      
+          name: webApp-build       
+          path: webApp/dist        
+          workflow_conclusion: success 
+          search_artifacts: true    
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
